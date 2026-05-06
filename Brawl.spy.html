@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Brawl Stars — Шпион</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a2a3a 0%, #0f1a24 100%);
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .game-container {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 24px 20px 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.2);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #FFD966, #FF9F4A);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .sub {
+            opacity: 0.8;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: rgba(0,0,0,0.6);
+            border-radius: 32px;
+            padding: 30px 20px;
+            margin: 20px 0;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.4);
+            transition: all 0.2s ease;
+        }
+
+        .role-hidden {
+            background: linear-gradient(145deg, #2c3e4e, #1e2f3a);
+            border: 2px solid #FFD966;
+        }
+
+        .role-revealed {
+            background: linear-gradient(145deg, #1e3a2f, #0f2a1f);
+            border: 2px solid #ffaa44;
+        }
+
+        .role-text {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin: 15px 0;
+            word-break: break-word;
+        }
+
+        .player-number {
+            font-size: 1rem;
+            background: #ffaa44;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            color: #1e2f3a;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #FFD966, #FF9F4A);
+            border: none;
+            border-radius: 60px;
+            padding: 14px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e2f3a;
+            margin: 8px 6px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: scale(0.96);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .secondary-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            backdrop-filter: blur(4px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .players-select {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .player-btn {
+            background: #2c3e4e;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            min-width: 70px;
+        }
+
+        .player-btn.active {
+            background: #FF9F4A;
+            color: #1e2f3a;
+        }
+
+        .result-stats {
+            text-align: left;
+            background: rgba(0,0,0,0.5);
+            border-radius: 24px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .game-started {
+            background: linear-gradient(145deg, #1e4a3a, #0f3a2a);
+            border: 2px solid #ffaa44;
+        }
+
+        footer {
+            margin-top: 24px;
+            font-size: 0.7rem;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container" id="app">
+    <h1>🕵️‍♂️ BRAWL STARS<br>ШПИОН</h1>
+    <div class="sub">скрытая роль | передавай телефон</div>
+
+    <!-- ЭКРАН ВЫБОРА ИГРОКОВ -->
+    <div id="setupScreen">
+        <div class="players-select" id="playersSelect"></div>
+        <button id="startGameBtn">🎲 НАЧАТЬ ИГРУ</button>
+    </div>
+
+    <!-- ЭКРАН ПРОСМОТРА РОЛЕЙ -->
+    <div id="gameScreen" style="display: none;">
+        <div class="player-number" id="playerNumDisplay">Игрок 1 из 4</div>
+        <div class="card" id="roleCard">
+            <div class="role-text" id="roleText">❓ ТВОЯ РОЛЬ СКРЫТА</div>
+        </div>
+        <div class="button-group" id="actionButtons">
+            <button id="revealBtn">🔍 ПОКАЗАТЬ РОЛЬ</button>
+        </div>
+        <div class="button-group" id="navButtons" style="display: none;">
+            <button id="prevBtn" class="secondary-btn">◀️ НАЗАД</button>
+            <button id="nextBtn" class="secondary-btn">СЛЕДУЮЩИЙ ▶️</button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ПОСЛЕ ПРОСМОТРА ВСЕХ РОЛЕЙ -->
+    <div id="afterViewScreen" style="display: none;">
+        <div class="card game-started">
+            <div class="role-text">🎉 ИГРА НАЧАЛАСЬ! 🎉</div>
+            <div style="font-size: 1rem; margin-top: 10px;">
+                Все роли просмотрены!<br>
+                Теперь можно начинать обсуждение.
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="finishAfterViewBtn">🏁 ЗАВЕРШИТЬ ИГРУ</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- ПЕРСОНАЖИ (20) ----------
+    const ALL_CHARACTERS = [
+        "Мег", "Кольт", "Спайк", "Джесси", "Леон", "Амбер", "Сэнди", "Эдгар",
+        "Биби", "Мортис", "Корнелиус", "Стар", "Бо", "Пайпер", "Брок", "Динамайк",
+        "Биз", "Джекки", "Фрэнк", "Пэм"
+    ];
+
+    let gameState = {
+        stage: 'setup',
+        totalPlayers: 4,
+        currentIndex: 0,
+        cards: [],
+        spyIndex: -1,
+        secretChar: '',
+        revealed: false
+    };
+
+    // DOM элементы
+    const setupScreen = document.getElementById('setupScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const afterViewScreen = document.getElementById('afterViewScreen');
+    const playersSelectDiv = document.getElementById('playersSelect');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const playerNumDisplay = document.getElementById('playerNumDisplay');
+    const roleText = document.getElementById('roleText');
+    const roleCard = document.getElementById('roleCard');
+    const revealBtn = document.getElementById('revealBtn');
+    const navButtonsDiv = document.getElementById('navButtons');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const finishAfterViewBtn = document.getElementById('finishAfterViewBtn');
+
+    // --- Отрисовка выбора количества игроков ---
+    function renderPlayersSelect() {
+        playersSelectDiv.innerHTML = '';
+        for (let i = 3; i <= 10; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = `👥 ${i} игроков`;
+            btn.classList.add('player-btn');
+            if (gameState.totalPlayers === i) btn.classList.add('active');
+            btn.onclick = () => {
+                document.querySelectorAll('.player-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                gameState.totalPlayers = i;
+            };
+            playersSelectDiv.appendChild(btn);
+        }
+    }
+
+    // --- Создание новой игры ---
+    function initGame() {
+        const num = gameState.totalPlayers;
+        const secret = ALL_CHARACTERS[Math.floor(Math.random() * ALL_CHARACTERS.length)];
+        const spyIdx = Math.floor(Math.random() * num);
+        const cardsArr = [];
+        for (let i = 0; i < num; i++) {
+            cardsArr.push(i === spyIdx ? "spy" : secret);
+        }
+        gameState.cards = cardsArr;
+        gameState.spyIndex = spyIdx;
+        gameState.secretChar = secret;
+        gameState.currentIndex = 0;
+        gameState.revealed = false;
+        gameState.stage = 'playing';
+    }
+
+    // --- Обновить интерфейс текущей карточки ---
+    function updateCardUI() {
+        const currentRole = gameState.cards[gameState.currentIndex];
+        const playerNumber = gameState.currentIndex + 1;
+        playerNumDisplay.textContent = `Игрок ${playerNumber} из ${gameState.totalPlayers}`;
+
+        if (!gameState.revealed) {
+            roleCard.className = 'card role-hidden';
+            roleText.innerHTML = '❓ ТВОЯ РОЛЬ СКРЫТА<br><span style="font-size:0.9rem;">👇 нажми кнопку</span>';
+            revealBtn.style.display = 'inline-block';
+            navButtonsDiv.style.display = 'none';
+        } else {
+            roleCard.className = 'card role-revealed';
+            if (currentRole === 'spy') {
+                roleText.innerHTML = '🕵️‍♂️ ТЫ ШПИОН!<br><span style="font-size:1rem;">Ты не знаешь персонажа остальных</span>';
+            } else {
+                roleText.innerHTML = `🎭 ${currentRole}<br><span style="font-size:1rem;">Обычный игрок</span>`;
+            }
+            revealBtn.style.display = 'none';
+            navButtonsDiv.style.display = 'flex';
+        }
+    }
+
+    // --- Показать роль ---
+    function revealRole() {
+        if (gameState.revealed) return;
+        gameState.revealed = true;
+        updateCardUI();
+    }
+
+    // --- Переход к следующему игроку ---
+    function nextPlayer() {
+        if (gameState.currentIndex + 1 < gameState.totalPlayers) {
+            gameState.currentIndex++;
+            gameState.revealed = false;
+            updateCardUI();
+        }
+        
+        // Если дошли до последнего и роль показана — показываем экран "Игра началась"
+        if (gameState.currentIndex === gameState.totalPlayers - 1 && gameState.revealed) {
+            showAfterViewScreen();
+        }
+    }
+
+    // --- Переход к предыдущему игроку ---
+    function prevPlayer() {
+        if (gameState.currentIndex > 0) {
+            gameState.currentIndex--;
+            gameState.revealed = false;
+            updateCardUI();
+        }
+    }
+
+    // --- Показать экран после просмотра всех ролей ---
+    function showAfterViewScreen() {
+        gameScreen.style.display = 'none';
+        afterViewScreen.style.display = 'block';
+        gameState.stage = 'after_view';
+    }
+
+    // --- Завершение игры (показать статистику) ---
+    function finishGame() {
+        const spyNum = gameState.spyIndex + 1;
+        const char = gameState.secretChar;
+        let resultHtml = `<div class="result-stats">
+            <strong>🏆 ИГРА ЗАКОНЧЕНА 🏆</strong><br><br>
+            ✨ Персонаж игры: <strong>${char}</strong><br>
+            🕵️ Шпион: <strong>игрок №${spyNum}</strong><br><br>
+            📋 Все роли:<br>`;
+        for (let i = 0; i < gameState.cards.length; i++) {
+            const role = gameState.cards[i] === 'spy' ? 'ШПИОН 🕵️' : gameState.cards[i];
+            resultHtml += `• Игрок ${i+1}: ${role}<br>`;
+        }
+        resultHtml += `<br><button id="restartBtn" style="margin-top:12px">🎮 НОВАЯ ИГРА</button></div>`;
+        
+        const container = afterViewScreen;
+        container.innerHTML = resultHtml;
+        gameState.stage = 'finished';
+        document.getElementById('restartBtn')?.addEventListener('click', () => {
+            location.reload();
+        });
+    }
+
+    // --- Запуск игры из меню ---
+    function startGame() {
+        initGame();
+        setupScreen.style.display = 'none';
+        gameScreen.style.display = 'block';
+        afterViewScreen.style.display = 'none';
+        updateCardUI();
+    }
+
+    // --- Проверка: если последний игрок посмотрел роль ---
+    function checkAndShowAfterView() {
+        if (gameState.currentIndex === gameState.totalPlayers - 1 && gameState.revealed) {
+            showAfterViewScreen();
+        }
+    }
+
+    // Переопределяем revealRole, чтобы проверять после показа роли
+    const originalReveal = revealRole;
+    revealRole = function() {
+        if (gameState.revealed) return;
+        gameState.revealed = true;
+        updateCardUI();
+        checkAndShowAfterView();
+    };
+
+    // ---- Обработчики кнопок ----
+    revealBtn.onclick = () => revealRole();
+    nextBtn.onclick = () => {
+        nextPlayer();
+        checkAndShowAfterView();
+    };
+    prevBtn.onclick = prevPlayer;
+    finishAfterViewBtn.onclick = finishGame;
+    startGameBtn.onclick = startGame;
+
+    // Инициализация
+    renderPlayersSelect();
+
+    // Telegram Web App поддержка
+    if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        Telegram.WebApp.enableClosingConfirmation();
+    }
+</script>
+</body>
+</html>
